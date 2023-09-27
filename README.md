@@ -29,3 +29,7 @@
 - 동작 페이지를 코드로 조작할 때 사용
 - beautifulsoup로 건들이지 못하는 부분을 해결
 - 스크래핑을 자동화할 수 있게 해줌
+
+### headless
+- selenium 조작시 브라우저 창을 띄우지 않고 실행하는 옵션
+- headless 사용시 user agent가 headlesschrome으로 변경되어 서버에서 브라우저를 차단할 수 있으므로 chrome user agent 옵션을 따로 설정
