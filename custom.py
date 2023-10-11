@@ -28,6 +28,9 @@ print("selenium을 활용한 이미지 크롤링 + 다양한 기능을 추가한
 chrome_options = Options()
 chrome_options.add_experimental_option("detach", True)
 
+# ssl 인증 파싱 문제를 막기 위해 설정
+chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
+
 # webdriver 초기화
 driver = webdriver.Chrome(options=chrome_options)
 
