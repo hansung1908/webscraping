@@ -19,6 +19,7 @@ from geopy.geocoders import Nominatim
 # 인증서 관련 문제 해결을 위한 라이브러리
 import certifi
 import ssl
+import re
 
 print("부동산 데이터 받아 지역별로 분류, 지도 표시(동적 웹)")
 
@@ -125,7 +126,7 @@ def refresh():
     time.sleep(3) # 새로고침 딜레이
 
 # 지도와 마커를 표시를 위한 메소드
-def mapmarker(address, name, price, latitude, longitude):
+def mapmarker(name, price, latitude, longitude):
     # 좌표 데이터를 바탕으로 지도 생성
     m = folium.Map(location=[latitude, longitude],
                 zoom_start=17,
@@ -138,7 +139,7 @@ def mapmarker(address, name, price, latitude, longitude):
                     tooltip=name).add_to(m)
 
     # 해당 지도를 지역이름이 붙혀진 html 파일로 저장
-    m.save("{}.html".format(address))
+    m.save("{}.html".format(name))
 
 # 주소를 좌표로 변환하는 함수
 def address_to_coordinates(address):
@@ -151,16 +152,33 @@ def address_to_coordinates(address):
         return None
 
 # 좌표를 받고 지도를 생성하기 위한 메소드, 기존 메소드를 결합해 더욱 간소화
-def make_map(address, name, price):
+def make_map(name, price):
+
+    # 주소 검색을 위해 네이버로 이동
+    driver.get("https://www.naver.com/")
+
+    # 해당 아파트 이름 검색
+    element = driver.find_element(By.CLASS_NAME, "search_input")
+    element.send_keys(name)
+    element.send_keys(Keys.RETURN)
+
+    # 현재 페이지 데이터 크롤링
+    soup = BeautifulSoup(driver.page_source, "lxml")
+
+    # 해당 아파트 주소(우편번호는 제외) 저장
+    address = soup.find("span", attrs={"class":"addr"})
+    readdress = re.sub(r'\(우\).+', '', address.get_text())
+    print(readdress)
+
     # 주소를 좌표로 변환
-    coordinates = address_to_coordinates(address)
+    coordinates = address_to_coordinates(readdress)
 
     if coordinates is not None:
         print(f"입력한 주소의 좌표: {coordinates[0]}, {coordinates[1]}")
     else:
         print("주소를 찾을 수 없습니다.")
 
-    mapmarker(address, name, price, coordinates[0], coordinates[1])
+    mapmarker(name, price, coordinates[0], coordinates[1])
 
 
 place(1, 1, 9) # 강남구 압구정동
@@ -221,15 +239,15 @@ print(df)
 # 각 지역별 아파트 평균매매가격을 비교하여 가장 큰 가격의 아파트에 대한 정보를 데이터프레임에서 가져와 지도 생성
 gangnam_max_key = max(gangnam_dealing_avg_dict, key=gangnam_dealing_avg_dict.get)
 gangnam_max_row_data = df.iloc[gangnam_max_key].tolist()
-make_map('강남구 압구정동', gangnam_max_row_data[0], gangnam_max_row_data[3])
+make_map(gangnam_max_row_data[0], gangnam_max_row_data[3])
 
 nowon_max_key = max(nowon_dealing_avg_dict, key=nowon_dealing_avg_dict.get)
 nowon_max_row_data = df.iloc[nowon_max_key].tolist()
-make_map('노원구 공릉동', nowon_max_row_data[0], nowon_max_row_data[3])
+make_map(nowon_max_row_data[0], nowon_max_row_data[3])
 
 gwanak_max_key = max(gwanak_dealing_avg_dict, key=gwanak_dealing_avg_dict.get)
 gwanak_max_row_data = df.iloc[gwanak_max_key].tolist()
-make_map('관악구 신림동', gwanak_max_row_data[0], gwanak_max_row_data[3])
+make_map(gwanak_max_row_data[0], gwanak_max_row_data[3])
 
 driver.quit()
 
